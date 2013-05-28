@@ -4,28 +4,9 @@
 
 #define MAGIC_TEXTEDIT_HEIGHT_SIZE 12
 
-void OneLineEdit::keyPressEvent(QKeyEvent *event)
-{
-    if ( mIgnoreEnter &&
-         (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
-    {
-            emit enterPressed();
-    }
-    else
-    {
-        QTextEdit::keyPressEvent(event);
-    }
-}
-
-void OneLineEdit::setIgnoreEnterKey(bool ignore)
-{
-    mIgnoreEnter = ignore;
-}
-
-
 OneLineEdit::OneLineEdit(QWidget *parent)
     : QTextEdit(parent),
-      mIgnoreEnter(false)
+      mEnterKeyResponse(Default)
 {
     setWordWrapMode(QTextOption::NoWrap);
     setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -33,4 +14,30 @@ OneLineEdit::OneLineEdit(QWidget *parent)
     setTabChangesFocus(true);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+}
+
+void OneLineEdit::keyPressEvent(QKeyEvent *event)
+{
+    if ((event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter))
+    {
+        switch (mEnterKeyResponse)
+        {
+            case None:
+                return;
+            case EmitEnterPressed:
+                emit enterPressed();
+                return;
+            case EmitJumpToNext:
+                emit jumpToNext();
+                return;
+            default:
+                break;
+        }
+    }
+    QTextEdit::keyPressEvent(event);
+}
+
+void OneLineEdit::setEnterKeyResponseType(EnterKeyResponseType type)
+{
+    mEnterKeyResponse = type;
 }

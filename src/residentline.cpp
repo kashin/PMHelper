@@ -12,9 +12,17 @@ ResidentLine::ResidentLine(const QString startTime, const QString endTime, QWidg
     QBoxLayout* mainLayout = new QBoxLayout(QBoxLayout::LeftToRight, this);
     mainLayout->setAlignment(Qt::AlignTop);
 
+    QDateTime dateTime = QDateTime::fromString(startTime, "d/M/yy");
+    if (!dateTime.isValid()) {
+        emit wrongStartDateFormat();
+    }
     mStartTimeLabel = new QLabel(startTime, this);
     mainLayout->addWidget(mStartTimeLabel);
 
+    dateTime = QDateTime::fromString(endTime, "d/M/yy");
+    if (!dateTime.isValid()) {
+        emit wrongEndDateFormat();
+    }
     mEndTimeLabel = new QLabel(endTime, this);
     mainLayout->addWidget(mEndTimeLabel);
 
@@ -27,12 +35,35 @@ ResidentLine::ResidentLine(const QString startTime, const QString endTime, QWidg
 
 qint64 ResidentLine::getDays()
 {
+    bool invalidDate = false;
     QDateTime startDateTime = QDateTime::fromString(mStartTimeLabel->text(), "d/M/yy");
+    if (!startDateTime.isValid())
+    {
+        emit wrongStartDateFormat();
+    }
     QDateTime endDateTime = QDateTime::fromString(mEndTimeLabel->text(), "d/M/yy");
-    qint64 result = qAbs(startDateTime.daysTo(endDateTime)) - 1;
+    if (!endDateTime.isValid())
+    {
+        emit wrongEndDateFormat();
+    }
+
+    qint64 result = 0;
+    if (!invalidDate)
+    {
+        result = qAbs(startDateTime.daysTo(endDateTime)) - 1;
+    }
     return result < 0 ? 0 : result;
 }
 
+void ResidentLine::setStartTime(QString startTime)
+{
+    mStartTimeLabel->setText(startTime);
+}
+
+void ResidentLine::setEndTime(QString endTime)
+{
+    mEndTimeLabel->setText(endTime);
+}
 
 void ResidentLine::onRemoveLine()
 {

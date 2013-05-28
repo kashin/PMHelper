@@ -8,15 +8,21 @@
 #include <QTextEdit>
 #include <QDateTime>
 #include <QDebug>
+#include <QTimer>
 
 ResidentTab::ResidentTab(QWidget *parent)
     : QWidget(parent),
       mStartTimeEdit(0),
       mEndTimeEdit(0),
       mLinesLayout(0),
-      mStatusLabel(0)
+      mStatusLabel(0),
+      mHadErrorDuringCalculations(false)
 {
     QBoxLayout* mainLayout = new QBoxLayout(QBoxLayout::TopToBottom, this);
+
+    //HowTo label
+    QLabel* howToLabel = new QLabel(tr("Date's format: d/m/yy"), this);
+    mainLayout->addWidget(howToLabel);
 
     // Add lines layout
     QBoxLayout* addLinelayout = new QBoxLayout(QBoxLayout::LeftToRight, this);
@@ -28,10 +34,12 @@ ResidentTab::ResidentTab(QWidget *parent)
     QLabel* addLineLabel = new QLabel(tr("add new entry"), this);
     addLinelayout->addWidget(addLineLabel, 0, Qt::AlignLeft | Qt::AlignVCenter);
     mStartTimeEdit = new OneLineEdit(this);
+    mStartTimeEdit->setEnterKeyResponseType(OneLineEdit::EmitJumpToNext);
+    connect(mStartTimeEdit, SIGNAL(jumpToNext()), this, SLOT(onJumpToNextTimeEdit()));
     addLinelayout->addWidget(mStartTimeEdit);
 
     mEndTimeEdit = new OneLineEdit(this);
-    mEndTimeEdit->setIgnoreEnterKey(true);
+    mEndTimeEdit->setEnterKeyResponseType(OneLineEdit::EmitEnterPressed);
     connect(mEndTimeEdit, SIGNAL(enterPressed()), this, SLOT(onAddNewEntry()));
     addLinelayout->addWidget(mEndTimeEdit);
 
@@ -50,14 +58,23 @@ ResidentTab::ResidentTab(QWidget *parent)
     mainLayout->addWidget(mStatusLabel);
 
     setLayout(mainLayout);
+    QTimer::singleShot(0, mStartTimeEdit, SLOT(setFocus()));
 }
 
 void ResidentTab::onAddNewEntry()
 {
     ResidentLine* newLine = new ResidentLine(mStartTimeEdit->toPlainText(), mEndTimeEdit->toPlainText(), this);
     connect(newLine, SIGNAL(removeResidentLine(ResidentLine*)), this, SLOT(onRemoveResidentLine(ResidentLine*)));
+    connect(newLine, SIGNAL(wrongStartDateFormat()), this, SLOT(onWrongDateFormat()));
     mLinesLayout->addWidget(newLine);
     recalculateResult();
+    mStartTimeEdit->clear();
+    mEndTimeEdit->clear();
+}
+
+void ResidentTab::onJumpToNextTimeEdit()
+{
+    mEndTimeEdit->setFocus(Qt::OtherFocusReason);
 }
 
 void ResidentTab::onRemoveResidentLine(ResidentLine *line)
@@ -65,6 +82,12 @@ void ResidentTab::onRemoveResidentLine(ResidentLine *line)
     mLinesLayout->removeWidget(line);
     line->deleteLater();
     recalculateResult();
+}
+
+void ResidentTab::onWrongDateFormat()
+{
+    mHadErrorDuringCalculations = true;
+    mStatusLabel->setText(tr("Added a line with a wrong date format"));
 }
 
 void ResidentTab::recalculateResult()
@@ -84,5 +107,9 @@ void ResidentTab::recalculateResult()
             result += line->getDays();
         }
     }
-    mStatusLabel->setText(tr("Days outside the country:") + QString::number(result));
+    if (!mHadErrorDuringCalculations) {
+        mStatusLabel->setText(tr("Days outside: ") + QString::number(result));
+    } else {
+        mHadErrorDuringCalculations = false;
+    }
 }

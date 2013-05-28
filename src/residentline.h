@@ -13,17 +13,22 @@ public:
 
 
     qint64 getDays();
-    
+
+    void setStartTime(QString startTime);
+    void setEndTime(QString endTime);
+
 signals:
     void removeResidentLine(ResidentLine* line);
-    
+    void wrongStartDateFormat();
+    void wrongEndDateFormat();
+
 private slots:
     void onRemoveLine();
 
 private:
     QLabel* mStartTimeLabel;
     QLabel* mEndTimeLabel;
-    
+
 };
 
 #endif // RESIDENTLINE_H

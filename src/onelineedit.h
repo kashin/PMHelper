@@ -9,21 +9,30 @@ class OneLineEdit : public QTextEdit
 {
     Q_OBJECT
 public:
+    enum EnterKeyResponseType {
+        Default = 0,
+        EmitEnterPressed,
+        EmitJumpToNext,
+        None = 255
+    };
+
     OneLineEdit(QWidget* parent = 0);
 
     void keyPressEvent(QKeyEvent* event);
 
-    /*!
-     * if @param ignore is set to true, then enter key events will be ignored
-     * and enterPressed signal emitted instead of adding new line
+    /**
+     * @brief setEnterKeyResponseType sets an 'enter' key response type
+     *
+     * @param mask EnterKeyResponseType that specifies required behavior.
      */
-    void setIgnoreEnterKey(bool ignore);
+    void setEnterKeyResponseType(EnterKeyResponseType type);
 
 signals:
     void enterPressed();
+    void jumpToNext();
 
 private:
-    bool mIgnoreEnter;
+    EnterKeyResponseType mEnterKeyResponse;
 };
 
 #endif // ONELINEEDIT_H
